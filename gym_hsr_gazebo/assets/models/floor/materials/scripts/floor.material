@@ -1,0 +1,18 @@
+material Floor/Image
+{
+    technique
+    {
+        pass
+        {
+            ambient 0.000000 0.000000 0.000000 1.000000         
+            emissive 0.000000 0.0000000 0.000000 1.000000
+            lighting on
+
+            texture_unit
+            {
+                texture floor_white.jpg
+                scale 0.0625 0.0625
+            }
+        }
+    }
+}
