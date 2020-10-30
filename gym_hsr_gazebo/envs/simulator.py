@@ -37,3 +37,10 @@ class Simulator:
 
     def _handle_model_state(self, msg):
         self._model_state_msg = msg
+
+    def get_model_pose(self, model):
+        if self._model_state_msg is None:
+            return None
+        idx = self._model_state_msg.name.index(model)
+        return self._model_state_msg.pose[idx]
+

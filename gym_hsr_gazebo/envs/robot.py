@@ -10,6 +10,14 @@ import nav_msgs.msg
 BASE_STATE_TOPIC = '/hsrb/omni_base_controller/state'
 JOINT_STATE_TOPIC = '/hsrb/joint_states'
 ODOM_TOPIC = '/hsrb/odom'
+JOINTS = [
+    'arm_flex_joint',
+    'arm_lift_joint',
+    'arm_roll_joint',
+    'wrist_flex_joint',
+    'wrist_roll_joint'
+]
+
 
 class Robot:
     def __init__(self):
@@ -17,7 +25,7 @@ class Robot:
         self._base_state_msg = None
         self._odom_msg = None
         self._joint_states = {}
-        
+
         self._connect_action_clients()
         self._connect_sub_pub()
 
@@ -29,16 +37,16 @@ class Robot:
 
     def _connect_sub_pub(self):
         self._arm_pub = rospy.Publisher(
-            '/hsrb/arm_trajectory_controller/command', 
+            '/hsrb/arm_trajectory_controller/command',
             trajectory_msgs.msg.JointTrajectory, queue_size=1)
         self._base_pub = rospy.Publisher(
-            '/hsrb/command_velocity', 
+            '/hsrb/command_velocity',
             geometry_msgs.msg.Twist, queue_size=1)
         self._joint_state_sub = rospy.Subscriber(
-            JOINT_STATE_TOPIC, 
+            JOINT_STATE_TOPIC,
             sensor_msgs.msg.JointState, self._handle_joint_state)
         self._base_state_sub = rospy.Subscriber(
-            BASE_STATE_TOPIC, 
+            BASE_STATE_TOPIC,
             control_msgs.msg.JointTrajectoryControllerState, self._handle_base_state)
         self._odom_sub = rospy.Subscriber(
             ODOM_TOPIC,
@@ -46,7 +54,7 @@ class Robot:
         )
 
         # wait to establish connection between the controller
-        while (self._arm_pub.get_num_connections() == 0 
+        while (self._arm_pub.get_num_connections() == 0
                 or self._base_pub.get_num_connections() == 0):
             rospy.sleep(0.1)
 
@@ -91,15 +99,15 @@ class Robot:
     def set_desired_velocities(self, velocities, timestep=0.1):
         assert(len(velocities) == 8)
 
-         # Arm
+        # Arm
         traj = trajectory_msgs.msg.JointTrajectory()
         traj.joint_names = [
-                'arm_flex_joint',
-                'arm_lift_joint',
-                'arm_roll_joint',
-                'wrist_flex_joint',
-                'wrist_roll_joint'
-                ]
+            'arm_flex_joint',
+            'arm_lift_joint',
+            'arm_roll_joint',
+            'wrist_flex_joint',
+            'wrist_roll_joint'
+        ]
         p = trajectory_msgs.msg.JointTrajectoryPoint()
         p.positions = [
             self._joint_states['arm_flex_joint'] + velocities[0] * timestep,
@@ -107,7 +115,7 @@ class Robot:
             self._joint_states['arm_roll_joint'] + velocities[2] * timestep,
             self._joint_states['wrist_flex_joint'] + velocities[3] * timestep,
             self._joint_states['wrist_roll_joint'] + velocities[4] * timestep
-            ]
+        ]
         p.velocities = [0, 0, 0, 0, 0]
         p.time_from_start = rospy.Time(timestep)
         traj.points = [p]
@@ -153,3 +161,10 @@ class Robot:
 
     def _handle_odometry(self, msg):
         self._odom_msg = msg
+
+    def get_joint_states(self):
+        return [self._joint_state_msg.position[ \
+                self._joint_state_msg.name.index(n)] for n in JOINTS]
+
+    def get_odom(self):
+        return self._odom_msg.pose.pose.position
