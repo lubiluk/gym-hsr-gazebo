@@ -29,15 +29,17 @@ class HsrbPushEnv(gym.GoalEnv):
         self._simulator.go_turbo()
         self._robot = Robot()
 
-
         # 5 for arm, 3 for base
         self._goal_cube_xy = self._sample_goal()
         obs = self._get_observation()
         self.action_space = spaces.Box(-1., 1., shape=(8,), dtype='float32')
         self.observation_space = spaces.Dict(dict(
-            desired_goal=spaces.Box(-np.inf, np.inf, shape=obs['achieved_goal'].shape, dtype='float32'),
-            achieved_goal=spaces.Box(-np.inf, np.inf, shape=obs['achieved_goal'].shape, dtype='float32'),
-            observation=spaces.Box(-np.inf, np.inf, shape=obs['observation'].shape, dtype='float32'),
+            desired_goal=spaces.Box(-np.inf, np.inf,
+                                    shape=obs['achieved_goal'].shape, dtype='float32'),
+            achieved_goal=spaces.Box(-np.inf, np.inf,
+                                     shape=obs['achieved_goal'].shape, dtype='float32'),
+            observation=spaces.Box(-np.inf, np.inf,
+                                   shape=obs['observation'].shape, dtype='float32'),
         ))
 
         rospy.loginfo("Environment ready")
@@ -57,6 +59,11 @@ class HsrbPushEnv(gym.GoalEnv):
 
     def reset(self):
         self._simulator.unpause()
+        self._simulator.reset()
+        self._robot.set_desired_velocities(np.zeros(8))
+        # let it stop
+        rospy.sleep(3)
+        self._simulator.set_model_position("hsrb", [0, 0, 0], [0, 0, 0, 1])
         self._robot.move_to_start_pose()
         rospy.sleep(TIME_STEP)
         self._simulator.pause()
@@ -77,7 +84,8 @@ class HsrbPushEnv(gym.GoalEnv):
         info = {
             'is_success': is_success,
         }
-        reward = self.compute_reward(obs['achieved_goal'], self._goal_cube_xy, info)
+        reward = self.compute_reward(
+            obs['achieved_goal'], self._goal_cube_xy, info)
         done = is_success
 
         return (obs, reward, done, info)

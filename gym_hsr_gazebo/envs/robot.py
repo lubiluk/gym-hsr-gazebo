@@ -30,10 +30,20 @@ class Robot:
         self._connect_sub_pub()
 
     def _connect_action_clients(self):
-        self.trajectory_client = actionlib.SimpleActionClient(
+        self.head_trajectory_client = actionlib.SimpleActionClient(
             '/hsrb/head_trajectory_controller/follow_joint_trajectory',
             control_msgs.msg.FollowJointTrajectoryAction)
-        self.trajectory_client.wait_for_server()
+        self.head_trajectory_client.wait_for_server()
+
+        self.arm_trajectory_client = actionlib.SimpleActionClient(
+            '/hsrb/arm_trajectory_controller/follow_joint_trajectory',
+            control_msgs.msg.FollowJointTrajectoryAction)
+        self.arm_trajectory_client.wait_for_server()
+
+        self.gripper_trajectory_client = actionlib.SimpleActionClient(
+            '/hsrb/gripper_controller/follow_joint_trajectory',
+            control_msgs.msg.FollowJointTrajectoryAction)
+        self.gripper_trajectory_client.wait_for_server()
 
     def _connect_sub_pub(self):
         self._arm_pub = rospy.Publisher(
@@ -60,6 +70,7 @@ class Robot:
 
     def move_head_to(self, pan, tilt, time=2.0):
         self._send_trajectory(
+            self.head_trajectory_client,
             ['head_pan_joint', 'head_tilt_joint'],
             [0, 0],
             time=time
@@ -68,6 +79,7 @@ class Robot:
     def move_arm_to(self, angles, time=3.0):
         assert len(angles) == 5
         self._send_trajectory(
+            self.arm_trajectory_client,
             ['arm_flex_joint',
              'arm_lift_joint',
              'arm_roll_joint',
@@ -79,6 +91,7 @@ class Robot:
 
     def move_gripper_to(self, angle, effort, time=2.0):
         self._send_trajectory(
+            self.gripper_trajectory_client,
             ['hand_motor_joint'],
             [angle],
             efforts=[effort],
@@ -130,7 +143,7 @@ class Robot:
 
         self._base_pub.publish(tw)
 
-    def _send_trajectory(self, joints, positions, velocities=None, efforts=None, time=2.0):
+    def _send_trajectory(self, client, joints, positions, velocities=None, efforts=None, time=2.0):
         goal = control_msgs.msg.FollowJointTrajectoryGoal()
         traj = trajectory_msgs.msg.JointTrajectory()
         traj.joint_names = joints
@@ -144,8 +157,8 @@ class Robot:
         traj.points = [p]
         goal.trajectory = traj
 
-        self.trajectory_client.send_goal(goal)
-        self.trajectory_client.wait_for_result()
+        client.send_goal(goal)
+        client.wait_for_result()
 
     def _handle_joint_state(self, msg):
         self._joint_state_msg = msg
