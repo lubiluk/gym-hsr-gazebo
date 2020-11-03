@@ -139,7 +139,7 @@ class Robot:
         tw = geometry_msgs.msg.Twist()
         tw.linear.x = velocities[5]
         tw.linear.y = velocities[6]
-        tw.linear.z = velocities[7]
+        tw.angular.z = velocities[7]
 
         self._base_pub.publish(tw)
 
