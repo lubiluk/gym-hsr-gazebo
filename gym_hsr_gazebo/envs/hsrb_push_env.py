@@ -16,6 +16,7 @@ import numpy as np
 
 TIME_STEP = 0.1
 DISTANCE_THRESHOLD = 0.04
+WORKSPACE_RADIUS = 2.0
 
 
 class HsrbPushEnv(gym.GoalEnv):
@@ -70,6 +71,17 @@ class HsrbPushEnv(gym.GoalEnv):
 
         self._goal_cube_xy = self._sample_goal()
 
+        pose = self._simulator.get_model_pose("Lack")
+        self._table_pose = np.array([
+            pose.position.x,
+            pose.position.y,
+            pose.position.z,
+            pose.orientation.x,
+            pose.orientation.y,
+            pose.orientation.z,
+            pose.orientation.w,
+        ], dtype=np.float32)
+
         return self._get_observation()
 
     def step(self, action):
@@ -86,7 +98,7 @@ class HsrbPushEnv(gym.GoalEnv):
         }
         reward = self.compute_reward(
             obs['achieved_goal'], self._goal_cube_xy, info)
-        done = is_success
+        done = is_success or self._is_table_displaced() or self._is_robot_far_away()
 
         return (obs, reward, done, info)
 
@@ -127,3 +139,25 @@ class HsrbPushEnv(gym.GoalEnv):
 
     def _sample_goal(self):
         return (np.random.sample(2) * [0.5 + 0.5, 1]).astype(np.float32)
+
+    def _is_table_displaced(self):
+        pose = self._simulator.get_model_pose("Lack")
+        current_pose = np.array([
+            pose.position.x,
+            pose.position.y,
+            pose.position.z,
+            pose.orientation.x,
+            pose.orientation.y,
+            pose.orientation.z,
+            pose.orientation.w,
+        ], dtype=np.float32)
+
+        return not np.allclose(self._table_pose, current_pose, atol=0.01)
+
+    def _is_robot_far_away(self):
+        table_pose = self._simulator.get_model_pose("Lack")
+        robot_pose = self._simulator.get_model_pose("hsrb")
+
+        return abs(table_pose.position.x - robot_pose.position.x) > WORKSPACE_RADIUS or \
+            abs(table_pose.position.y - robot_pose.position.y) > WORKSPACE_RADIUS
+
