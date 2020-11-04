@@ -63,8 +63,8 @@ class HsrbPushEnv(gym.GoalEnv):
         self._robot.set_desired_velocities(np.zeros(8))
         # let it stop
         rospy.sleep(3)
-        self._simulator.set_model_position("hsrb", [0, 0, 0], [0, 0, 0, 1])
         self._robot.move_to_start_pose()
+        self._simulator.set_model_position("hsrb", [0, 0, 0], [0, 0, 0, 1])
         rospy.sleep(TIME_STEP)
         self._simulator.pause()
 
