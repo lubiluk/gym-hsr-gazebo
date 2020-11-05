@@ -13,6 +13,7 @@ import nav_msgs.msg
 from simulator import Simulator
 from robot import Robot
 import numpy as np
+import tf
 
 TIME_STEP = 0.1
 DISTANCE_THRESHOLD = 0.04
@@ -52,7 +53,7 @@ class HsrbPushEnv(gym.GoalEnv):
         base_path = Path(__file__).parent.parent / "assets"
         launch_path = base_path / "launch" / "hsrb_push.launch"
 
-        args = ["base_dir:="+str(base_path.resolve())]
+        args = ["base_dir:="+str(base_path.resolve()), "fast_physics:=true"]
 
         self.launch = roslaunch.parent.ROSLaunchParent(
             uuid, [(str(launch_path.resolve()), args)], is_core=True)
@@ -60,13 +61,14 @@ class HsrbPushEnv(gym.GoalEnv):
 
     def reset(self):
         self._simulator.unpause()
-        self._simulator.reset()
         self._robot.set_desired_velocities(np.zeros(8))
         # let it stop
-        rospy.sleep(3)
-        self._robot.move_to_start_pose()
+        rospy.sleep(3.0)
         self._simulator.set_model_position("hsrb", [0, 0, 0], [0, 0, 0, 1])
-        rospy.sleep(TIME_STEP)
+        self._robot.move_to_start_pose()
+        self._simulator.set_model_position("Lack", [1.0, 0.0, 0.0], [0, 0, 0, 1])
+        self._simulator.set_model_position("wood_cube_5cm", [1.0, 0.0, 0.6], [0, 0, 0, 1])
+        rospy.sleep(1.0)
         self._simulator.pause()
 
         self._goal_cube_xy = self._sample_goal()
@@ -123,13 +125,20 @@ class HsrbPushEnv(gym.GoalEnv):
                             cube_pose.position.y], dtype=np.float32)
         joint_states = self._robot.get_joint_states()
         joint_positions = np.array(joint_states, dtype=np.float32)
-        odom = self._robot.get_odom()
-        odom_pose = np.array([odom.x,
-                              odom.y,
-                              odom.z], dtype=np.float32)
+        robot_pose = self._simulator.get_model_pose('hsrb')
+        quaternion = (
+            robot_pose.orientation.x,
+            robot_pose.orientation.y,
+            robot_pose.orientation.z,
+            robot_pose.orientation.w)
+        euler = tf.transformations.euler_from_quaternion(quaternion)
+
+        robot_xyy = np.array([robot_pose.position.x,
+                              robot_pose.position.y,
+                              euler[2]], dtype=np.float32)
 
         return {
-            'observation': np.concatenate([cube_xy, joint_positions, odom_pose]),
+            'observation': np.concatenate([cube_xy, joint_positions, robot_xyy]),
             'achieved_goal': cube_xy,
             'desired_goal': self._goal_cube_xy
         }
