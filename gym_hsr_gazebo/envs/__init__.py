@@ -1,1 +1,2 @@
 from gym_hsr_gazebo.envs.hsrb_push_env import HsrbPushEnv
+from gym_hsr_gazebo.envs.hsrb_reach_env import HsrbReachEnv

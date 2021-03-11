@@ -1,7 +1,7 @@
 import gym
 import gym_hsr_gazebo
 
-env = gym.make('HsrbPush-v0')
+env = gym.make('HsrbReach-v0')
 
 env.reset()
 

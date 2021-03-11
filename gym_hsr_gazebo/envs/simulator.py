@@ -26,6 +26,8 @@ class Simulator:
             '/gazebo/reset_world', std_srvs.srv.Empty)
         self._set_model_state = rospy.ServiceProxy(
             '/gazebo/set_model_state', gazebo_msgs.srv.SetModelState)
+        self._get_model_state = rospy.ServiceProxy(
+            '/gazebo/get_model_state', gazebo_msgs.srv.GetModelState)
         rospy.wait_for_service('/gazebo/get_physics_properties')
 
     def _connect_sub_pub(self):
@@ -49,6 +51,14 @@ class Simulator:
         idx = self._model_state_msg.name.index(model)
         return self._model_state_msg.pose[idx]
 
+    def set_model_pose(self, model_name, pose):
+        state = gazebo_msgs.msg.ModelState()
+        state.pose =  pose
+        state.reference_frame = "world"
+        state.model_name = model_name
+
+        self._set_model_state(state)
+
     def set_model_position(self, model_name, position, orientation):
         state = gazebo_msgs.msg.ModelState()
         state.pose.position.x = position[0]
@@ -60,3 +70,10 @@ class Simulator:
         state.model_name = model_name
 
         self._set_model_state(state)
+
+    def get_model_position(self, model_name, reference_name):
+        state = gazebo_msgs.msg.GetModelState()
+        state.model_name = model_name
+        state.relative_entity_name = reference_name
+
+        self._get_model_state(state)
