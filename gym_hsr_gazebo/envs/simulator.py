@@ -71,7 +71,7 @@ class Simulator:
 
         self._set_model_state(state)
 
-    def get_model_position(self, model_name, reference_name):
+    def get_relative_pose(self, model_name, reference_name):
         state = gazebo_msgs.msg.GetModelState()
         state.model_name = model_name
         state.relative_entity_name = reference_name

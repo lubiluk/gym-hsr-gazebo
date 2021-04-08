@@ -9,7 +9,7 @@
 
   <arg name="robot_name" default="$(optenv ROBOT_NAME hsrb)" />
   <include file="$(find hsrb_gazebo_bringup)/launch/hsrb_empty_world.launch" pass_all_args="true">
-    <arg name="world_name" value="$(arg base_dir)/worlds/hsrb_push.world" />
+    <arg name="world_name" value="$(arg base_dir)/worlds/hsrb_reach.world" />
     <!-- <arg name="robot_pos" value="[Initial pose of the robot]" /> -->
     <arg name="use_laser_odom" value="false" />
     <arg name="paused" value="$(arg paused)" />
