@@ -5,8 +5,8 @@ import numpy as np
 
 
 class HsrbReachEnv(HsrbEnv):
-    def __init__(self, timestep=0.1, workspace_radius=1.0, dense=False):
-        super(HsrbReachEnv, self).__init__(timestep, workspace_radius)
+    def __init__(self, gui=True, timestep=0.1, workspace_radius=1.0, dense=False):
+        super(HsrbReachEnv, self).__init__(gui, timestep, workspace_radius)
         self._dense = dense
 
     def reset(self):
