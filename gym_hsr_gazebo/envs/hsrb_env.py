@@ -134,8 +134,10 @@ class HsrbEnv(gym.Env):
         self._reset_robot()
 
         # move things to their place
+        self._simulator.set_model_position(self._model, [0, 0, 0], [0, 0, 0, 1])
         self._simulator.set_model_pose(self._table, self._table_start_pose)
         obj_pos = self._sample_goal()
+        rospy.sleep(2)
         self._simulator.pause()
         self._simulator.set_model_position(self._obj, obj_pos, [0, 0, 0, 1])
 

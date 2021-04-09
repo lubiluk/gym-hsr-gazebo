@@ -24,7 +24,7 @@ class HsrbReachEnv(HsrbEnv):
         obs = self._get_observation()
 
         is_success = self._is_success()
-        is_safety_violated = self._is_table_displaced() or self._is_robot_far_away()
+        is_safety_violated = self._is_table_displaced()
 
         info = {
             "is_success": is_success,
@@ -48,7 +48,7 @@ class HsrbReachEnv(HsrbEnv):
         return 0.0
 
     def _is_success(self):
-        return False
+        return self._simulator.check_model_collision(self._model, self._obj)
 
     def _get_observation_space(self):
         obs = self._get_observation()

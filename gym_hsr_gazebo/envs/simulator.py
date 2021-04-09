@@ -3,8 +3,6 @@ import std_srvs.srv
 import gazebo_msgs.srv
 import geometry_msgs.msg
 
-MODEL_STATE_TOPIC = '/gazebo/model_states'
-
 
 class Simulator:
     def __init__(self):
@@ -14,16 +12,18 @@ class Simulator:
         self._connect_sub_pub()
 
     def _connect_services(self):
-        self.pause = rospy.ServiceProxy(
-            '/gazebo/pause_physics', std_srvs.srv.Empty)
-        self.unpause = rospy.ServiceProxy(
-            '/gazebo/unpause_physics', std_srvs.srv.Empty)
+        self.pause = rospy.ServiceProxy('/gazebo/pause_physics',
+                                        std_srvs.srv.Empty)
+        self.unpause = rospy.ServiceProxy('/gazebo/unpause_physics',
+                                          std_srvs.srv.Empty)
         self._get_physics_properties = rospy.ServiceProxy(
-            '/gazebo/get_physics_properties', gazebo_msgs.srv.GetPhysicsProperties)
+            '/gazebo/get_physics_properties',
+            gazebo_msgs.srv.GetPhysicsProperties)
         self._set_physics_properties = rospy.ServiceProxy(
-            '/gazebo/set_physics_properties', gazebo_msgs.srv.SetPhysicsProperties)
-        self.reset = rospy.ServiceProxy(
-            '/gazebo/reset_world', std_srvs.srv.Empty)
+            '/gazebo/set_physics_properties',
+            gazebo_msgs.srv.SetPhysicsProperties)
+        self.reset = rospy.ServiceProxy('/gazebo/reset_world',
+                                        std_srvs.srv.Empty)
         self._set_model_state = rospy.ServiceProxy(
             '/gazebo/set_model_state', gazebo_msgs.srv.SetModelState)
         self._get_model_state = rospy.ServiceProxy(
@@ -31,19 +31,25 @@ class Simulator:
         rospy.wait_for_service('/gazebo/get_physics_properties')
 
     def _connect_sub_pub(self):
-        self._model_state_sub = rospy.Subscriber(
-            MODEL_STATE_TOPIC,
-            gazebo_msgs.msg.ModelStates, self._handle_model_state)
+        self._model_state_sub = rospy.Subscriber('/gazebo/model_states',
+                                                 gazebo_msgs.msg.ModelStates,
+                                                 self._handle_model_state)
+        self._collision_sub = rospy.Subscriber('/object_collision',
+                                               gazebo_msgs.msg.ContactsState,
+                                               self._handle_collision)
 
     def go_turbo(self):
         props = self._get_physics_properties()
         props.max_update_rate = 0
 
-        self._set_physics_properties(
-            props.time_step, props.max_update_rate, props.gravity, props.ode_config)
+        self._set_physics_properties(props.time_step, props.max_update_rate,
+                                     props.gravity, props.ode_config)
 
     def _handle_model_state(self, msg):
         self._model_state_msg = msg
+
+    def _handle_collision(self, msg):
+        self._collision_msg = msg
 
     def get_model_pose(self, model):
         if self._model_state_msg is None:
@@ -53,7 +59,7 @@ class Simulator:
 
     def set_model_pose(self, model_name, pose):
         state = gazebo_msgs.msg.ModelState()
-        state.pose =  pose
+        state.pose = pose
         state.reference_frame = "world"
         state.model_name = model_name
 
@@ -77,3 +83,14 @@ class Simulator:
         state.relative_entity_name = reference_name
 
         self._get_model_state(state)
+
+    def check_model_collision(self, model1, model2):
+        for s in self._collision_msg.states:
+            col1 = s.collision1_name.split('::')[0]
+            col2 = s.collision2_name.split('::')[0]
+
+            if (col1 == model1 and col2 == model2) or\
+             (col1 == model2 and col2 == model1):
+                return True
+
+        return False
